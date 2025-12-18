@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
+import { Suspense } from 'react'
 
 interface Question {
   id: number
@@ -27,7 +28,7 @@ interface Question {
   difficulty: string
 }
 
-export default function PracticePage() {
+function PracticeContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { user } = useAuthStore()
@@ -325,5 +326,20 @@ export default function PracticePage() {
         )}
       </div>
     </AppLayout>
+  )
+}
+
+export default function PracticePage() {
+  return (
+    <Suspense fallback={
+      <AppLayout>
+        <div className="flex flex-col items-center justify-center h-full p-8 gap-4">
+          <div className="w-12 h-12 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin" />
+          <p className="text-slate-500 font-bold uppercase tracking-widest text-xs animate-pulse">Loading Practice...</p>
+        </div>
+      </AppLayout>
+    }>
+      <PracticeContent />
+    </Suspense>
   )
 }
