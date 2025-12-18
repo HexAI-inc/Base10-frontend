@@ -198,8 +198,9 @@ export const classroomApi = {
     ai_context?: string;
   }) => api.put(`/classrooms/${classroomId}/students/${studentId}/profile`, data),
   sendStudentMessage: (classroomId: number, studentId: number, data: {
+    subject?: string;
     message: string;
-    type: 'encouragement' | 'warning' | 'tip';
+    type: string;
   }) => api.post(`/classrooms/${classroomId}/students/${studentId}/message`, data),
   getStudentMessages: (classroomId: number, studentId: number) =>
     api.get(`/classrooms/${classroomId}/students/${studentId}/messages`),

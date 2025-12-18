@@ -92,7 +92,7 @@ export default function StudentProfilePage({ params }: any) {
       await classroomApi.sendStudentMessage(classroomId, studentIdNum, {
         subject: messageSubject,
         message: messageContent,
-        message_type: messageType,
+        type: messageType,
       })
       
       showSuccess('Message sent successfully! Student will be notified.', 'Message Sent')
