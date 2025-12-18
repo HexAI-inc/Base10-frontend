@@ -55,15 +55,32 @@ export default function AdminUsersPage() {
       router.push('/dashboard')
       return
     }
+
+    loadInitialUsers()
   }, [user, router])
+
+  const loadInitialUsers = async () => {
+    setLoading(true)
+    try {
+      const response = await adminApi.getUsers(50)
+      setSearchResults(response.data)
+      setShowTopUsers(false)
+    } catch (err) {
+      console.error('Failed to load users:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (searchQuery.length < 3) return
+    if (searchQuery.length > 0 && searchQuery.length < 3) return
 
     setLoading(true)
     try {
-      const response = await adminApi.searchUsers(searchQuery)
+      const response = searchQuery.length === 0 
+        ? await adminApi.getUsers(50)
+        : await adminApi.searchUsers(searchQuery)
       setSearchResults(response.data)
       setShowTopUsers(false)
     } catch (err) {
@@ -96,10 +113,12 @@ export default function AdminUsersPage() {
     setActionLoading(userId)
     try {
       await adminApi.deactivateUser(userId, reason)
-      // Refresh search results
-      if (searchQuery) {
+      // Refresh results
+      if (searchQuery.length >= 3) {
         const response = await adminApi.searchUsers(searchQuery)
         setSearchResults(response.data)
+      } else {
+        loadInitialUsers()
       }
       alert('User deactivated successfully')
     } catch (err: any) {
@@ -115,10 +134,12 @@ export default function AdminUsersPage() {
     setActionLoading(userId)
     try {
       await adminApi.activateUser(userId)
-      // Refresh search results
-      if (searchQuery) {
+      // Refresh results
+      if (searchQuery.length >= 3) {
         const response = await adminApi.searchUsers(searchQuery)
         setSearchResults(response.data)
+      } else {
+        loadInitialUsers()
       }
       alert('User activated successfully')
     } catch (err: any) {
@@ -281,7 +302,7 @@ export default function AdminUsersPage() {
               </div>
               <button
                 type="submit"
-                disabled={loading || searchQuery.length < 3}
+                disabled={loading || (searchQuery.length > 0 && searchQuery.length < 3)}
                 className="px-6 py-3 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Search className="w-5 h-5" />}
@@ -331,7 +352,7 @@ export default function AdminUsersPage() {
         ) : searchResults.length > 0 ? (
           <div>
             <h2 className="text-2xl font-outfit font-bold text-slate-900 dark:text-slate-100 mb-6">
-              Search Results ({searchResults.length})
+              {searchQuery ? `Search Results (${searchResults.length})` : `All Users (${searchResults.length})`}
             </h2>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {searchResults.map(user => (
