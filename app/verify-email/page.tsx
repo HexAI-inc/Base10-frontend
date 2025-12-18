@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuthStore } from '@/store/authStore'
 import { api } from '@/lib/api'
@@ -7,7 +7,7 @@ import { CheckCircle2, XCircle, Loader2, Mail, Sparkles, ArrowRight } from 'luci
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 
-export default function VerifyEmailPage() {
+function VerifyEmailContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const token = searchParams.get('token')
@@ -116,7 +116,7 @@ export default function VerifyEmailPage() {
               </div>
               <Link
                 href="/login"
-                className="inline-flex items-center gap-2 text-slate-500 font-black uppercase tracking-widest text-xs hover:text-slate-900 dark:hover:text-white transition-all"
+                className="block text-slate-400 font-bold text-xs uppercase tracking-widest hover:text-slate-600 transition-colors"
               >
                 Back to Login
               </Link>
@@ -125,5 +125,17 @@ export default function VerifyEmailPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function VerifyEmailPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#0F172A] flex items-center justify-center p-6">
+        <div className="w-12 h-12 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin" />
+      </div>
+    }>
+      <VerifyEmailContent />
+    </Suspense>
   )
 }
