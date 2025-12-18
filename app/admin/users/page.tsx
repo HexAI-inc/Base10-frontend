@@ -13,7 +13,8 @@ import {
   Mail,
   Phone,
   Calendar,
-  TrendingUp
+  TrendingUp,
+  Filter
 } from 'lucide-react'
 
 interface User {
@@ -41,6 +42,7 @@ export default function AdminUsersPage() {
   const router = useRouter()
   const { user } = useAuthStore()
   const [searchQuery, setSearchQuery] = useState('')
+  const [selectedRole, setSelectedRole] = useState<string>('all')
   const [searchResults, setSearchResults] = useState<User[]>([])
   const [topUsers, setTopUsers] = useState<TopUser[]>([])
   const [loading, setLoading] = useState(false)
@@ -57,12 +59,12 @@ export default function AdminUsersPage() {
     }
 
     loadInitialUsers()
-  }, [user, router])
+  }, [user, router, selectedRole])
 
   const loadInitialUsers = async () => {
     setLoading(true)
     try {
-      const response = await adminApi.getUsers(50)
+      const response = await adminApi.getUsers(0, 50, selectedRole === 'all' ? undefined : selectedRole)
       setSearchResults(response.data)
       setShowTopUsers(false)
     } catch (err) {
@@ -79,7 +81,7 @@ export default function AdminUsersPage() {
     setLoading(true)
     try {
       const response = searchQuery.length === 0 
-        ? await adminApi.getUsers(50)
+        ? await adminApi.getUsers(0, 50, selectedRole === 'all' ? undefined : selectedRole)
         : await adminApi.searchUsers(searchQuery)
       setSearchResults(response.data)
       setShowTopUsers(false)
@@ -288,7 +290,7 @@ export default function AdminUsersPage() {
         </div>
         {/* Search Bar */}
         <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6 mb-8">
-          <div className="flex gap-4">
+          <div className="flex flex-col md:flex-row gap-4">
             <form onSubmit={handleSearch} className="flex-1 flex gap-3">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
@@ -296,7 +298,7 @@ export default function AdminUsersPage() {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search by email, phone, or name (min 3 characters)..."
+                  placeholder="Search by email, phone, or name..."
                   className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900 dark:text-slate-100"
                 />
               </div>
@@ -306,18 +308,34 @@ export default function AdminUsersPage() {
                 className="px-6 py-3 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Search className="w-5 h-5" />}
-                Search
+                <span className="hidden sm:inline">Search</span>
               </button>
             </form>
 
-            <button
-              onClick={loadTopUsers}
-              disabled={loading}
-              className="px-6 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition disabled:opacity-50 flex items-center gap-2"
-            >
-              <Trophy className="w-5 h-5" />
-              Top Users
-            </button>
+            <div className="flex gap-3">
+              <div className="relative">
+                <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <select
+                  value={selectedRole}
+                  onChange={(e) => setSelectedRole(e.target.value)}
+                  className="pl-9 pr-8 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900 dark:text-slate-100 appearance-none cursor-pointer font-medium"
+                >
+                  <option value="all">All Roles</option>
+                  <option value="student">Students</option>
+                  <option value="teacher">Teachers</option>
+                  <option value="admin">Admins</option>
+                </select>
+              </div>
+
+              <button
+                onClick={loadTopUsers}
+                disabled={loading}
+                className="px-6 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition disabled:opacity-50 flex items-center gap-2"
+              >
+                <Trophy className="w-5 h-5" />
+                <span className="hidden sm:inline">Top Users</span>
+              </button>
+            </div>
           </div>
         </div>
 

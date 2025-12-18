@@ -34,7 +34,14 @@ export default function ChatPage() {
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [currentSubject, setCurrentSubject] = useState<string>('')
-  const [aiStatus, setAiStatus] = useState<{ available: boolean; quota_remaining?: number } | null>(null)
+  const [aiStatus, setAiStatus] = useState<{ 
+    available: boolean; 
+    quota_remaining?: number;
+    features?: {
+      gpt_5_1_codex_max_enabled?: boolean;
+    };
+    model_name?: string;
+  } | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const subjects = [
@@ -125,6 +132,12 @@ export default function ChatPage() {
                   <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                   <span className="text-[10px] font-black text-emerald-700 dark:text-emerald-400 uppercase tracking-widest">Online</span>
                 </div>
+                {aiStatus?.features?.gpt_5_1_codex_max_enabled && (
+                  <div className="px-3 py-1 bg-purple-500/10 border-2 border-purple-500/20 rounded-full flex items-center gap-2">
+                    <Sparkles className="w-3 h-3 text-purple-500" />
+                    <span className="text-[10px] font-black text-purple-700 dark:text-purple-400 uppercase tracking-widest">GPT-5.1 Codex Max</span>
+                  </div>
+                )}
               </div>
               <p className="text-xs font-bold text-slate-400 dark:text-slate-600 uppercase tracking-widest">Powered by Base10 Intelligence</p>
             </div>

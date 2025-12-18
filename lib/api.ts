@@ -114,8 +114,8 @@ export const adminApi = {
     api.get('/admin/stats/summary', { params: { time_range: timeRange } }),
   
   // User Management
-  getUsers: (limit: number = 50) => 
-    api.get('/admin/users/search', { params: { query: '', limit } }),
+  getUsers: (skip: number = 0, limit: number = 20, role?: string) => 
+    api.get('/admin/users', { params: { skip, limit, role } }),
   searchUsers: (query: string, limit: number = 10) => 
     api.get('/admin/users/search', { params: { query, limit } }),
   getTopUsers: (limit: number = 10) => 
