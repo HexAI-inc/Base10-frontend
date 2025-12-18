@@ -120,6 +120,13 @@ export const adminApi = {
     api.get('/admin/users/search', { params: { query, limit } }),
   getTopUsers: (limit: number = 10) => 
     api.get('/admin/users/top', { params: { limit } }),
+  updateUser: (userId: number, data: {
+    full_name?: string;
+    role?: string;
+    total_points?: number;
+    is_verified?: boolean;
+    is_active?: boolean;
+  }) => api.put(`/admin/users/${userId}`, data),
   deactivateUser: (userId: number, reason: string) => 
     api.put(`/admin/users/${userId}/deactivate`, null, { params: { reason } }),
   activateUser: (userId: number) => 

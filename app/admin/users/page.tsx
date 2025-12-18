@@ -14,7 +14,11 @@ import {
   Phone,
   Calendar,
   TrendingUp,
-  Filter
+  Filter,
+  Edit2,
+  X,
+  Save,
+  ShieldCheck
 } from 'lucide-react'
 
 interface User {
@@ -50,6 +54,8 @@ export default function AdminUsersPage() {
   const [error, setError] = useState<string | null>(null)
   const [showTopUsers, setShowTopUsers] = useState(false)
   const [actionLoading, setActionLoading] = useState<number | null>(null)
+  const [editingUser, setEditingUser] = useState<User | null>(null)
+  const [editForm, setEditForm] = useState<Partial<User>>({})
 
   const loadInitialUsers = async () => {
     setLoading(true)
@@ -166,6 +172,37 @@ export default function AdminUsersPage() {
     }
   }
 
+  const handleUpdateUser = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editingUser) return
+
+    setActionLoading(editingUser.id)
+    try {
+      await adminApi.updateUser(editingUser.id, {
+        full_name: editForm.full_name,
+        role: editForm.role,
+        total_points: editForm.total_points,
+        is_verified: editForm.is_verified,
+        is_active: editForm.is_active
+      })
+      
+      // Refresh results
+      if (searchQuery.length >= 3) {
+        const response = await adminApi.searchUsers(searchQuery)
+        setSearchResults(response.data)
+      } else {
+        loadInitialUsers()
+      }
+      
+      setEditingUser(null)
+      alert('User updated successfully')
+    } catch (err: any) {
+      alert(err.response?.data?.detail || 'Failed to update user')
+    } finally {
+      setActionLoading(null)
+    }
+  }
+
   const UserCard = ({ user, isTopUser = false }: { user: User | TopUser, isTopUser?: boolean }) => {
     const topUser = isTopUser ? user as TopUser : null
 
@@ -193,6 +230,16 @@ export default function AdminUsersPage() {
           </div>
 
           <div className="flex gap-2">
+            <button
+              onClick={() => {
+                setEditingUser(user)
+                setEditForm(user)
+              }}
+              className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition"
+              title="Edit user"
+            >
+              <Edit2 className="w-5 h-5" />
+            </button>
             {user.is_active ? (
               <button
                 onClick={() => handleDeactivate(user.id)}
@@ -418,6 +465,113 @@ export default function AdminUsersPage() {
             <p className="text-slate-600 dark:text-slate-400">
               Search for users or view top performers
             </p>
+          </div>
+        )}
+
+        {/* Edit User Modal */}
+        {editingUser && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" onClick={() => setEditingUser(null)} />
+            <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-[2rem] shadow-2xl border-2 border-slate-100 dark:border-slate-800 overflow-hidden">
+              <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center">
+                    <Edit2 className="w-6 h-6 text-blue-500" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-outfit font-black text-slate-900 dark:text-white">Edit User</h2>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">ID: {editingUser.id}</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setEditingUser(null)}
+                  className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition"
+                >
+                  <X className="w-6 h-6 text-slate-400" />
+                </button>
+              </div>
+
+              <form onSubmit={handleUpdateUser} className="p-8 space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Full Name</label>
+                  <input
+                    type="text"
+                    value={editForm.full_name || ''}
+                    onChange={(e) => setEditForm({ ...editForm, full_name: e.target.value })}
+                    className="w-full h-14 px-6 bg-slate-50 dark:bg-slate-950 border-2 border-slate-100 dark:border-slate-800 rounded-2xl focus:outline-none focus:border-blue-500/50 transition-all dark:text-white font-bold"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Role</label>
+                    <select
+                      value={editForm.role || 'student'}
+                      onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}
+                      className="w-full h-14 px-6 bg-slate-50 dark:bg-slate-950 border-2 border-slate-100 dark:border-slate-800 rounded-2xl focus:outline-none focus:border-blue-500/50 transition-all dark:text-white font-bold appearance-none"
+                    >
+                      <option value="student">Student</option>
+                      <option value="teacher">Teacher</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Total Points</label>
+                    <input
+                      type="number"
+                      value={editForm.total_points || 0}
+                      onChange={(e) => setEditForm({ ...editForm, total_points: parseInt(e.target.value) })}
+                      className="w-full h-14 px-6 bg-slate-50 dark:bg-slate-950 border-2 border-slate-100 dark:border-slate-800 rounded-2xl focus:outline-none focus:border-blue-500/50 transition-all dark:text-white font-bold"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-6 pt-4">
+                  <label className="flex items-center gap-3 cursor-pointer group">
+                    <div className="relative">
+                      <input
+                        type="checkbox"
+                        checked={editForm.is_verified}
+                        onChange={(e) => setEditForm({ ...editForm, is_verified: e.target.checked })}
+                        className="sr-only"
+                      />
+                      <div className={`w-12 h-6 rounded-full transition-colors ${editForm.is_verified ? 'bg-emerald-500' : 'bg-slate-200 dark:bg-slate-800'}`} />
+                      <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${editForm.is_verified ? 'translate-x-6' : ''}`} />
+                    </div>
+                    <span className="text-xs font-black text-slate-500 uppercase tracking-widest group-hover:text-slate-700 dark:group-hover:text-slate-300 transition-colors">Verified</span>
+                  </label>
+
+                  <label className="flex items-center gap-3 cursor-pointer group">
+                    <div className="relative">
+                      <input
+                        type="checkbox"
+                        checked={editForm.is_active}
+                        onChange={(e) => setEditForm({ ...editForm, is_active: e.target.checked })}
+                        className="sr-only"
+                      />
+                      <div className={`w-12 h-6 rounded-full transition-colors ${editForm.is_active ? 'bg-emerald-500' : 'bg-slate-200 dark:bg-slate-800'}`} />
+                      <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${editForm.is_active ? 'translate-x-6' : ''}`} />
+                    </div>
+                    <span className="text-xs font-black text-slate-500 uppercase tracking-widest group-hover:text-slate-700 dark:group-hover:text-slate-300 transition-colors">Active</span>
+                  </label>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={actionLoading === editingUser.id}
+                  className="w-full h-16 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl font-outfit font-black text-xs uppercase tracking-[0.2em] shadow-2xl transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-3 disabled:opacity-50"
+                >
+                  {actionLoading === editingUser.id ? (
+                    <Loader2 className="w-6 h-6 animate-spin" />
+                  ) : (
+                    <>
+                      <Save className="w-5 h-5" />
+                      Save Changes
+                    </>
+                  )}
+                </button>
+              </form>
+            </div>
           </div>
         )}
       </div>
