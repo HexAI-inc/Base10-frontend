@@ -663,7 +663,12 @@ export default function ModerationPage() {
                           e.preventDefault()
                           setLoading(true)
                           try {
-                            await moderationApi.addFlashcard({ ...newFlashcard, deck_id: selectedDeckId })
+                            const payload = {
+                              ...newFlashcard,
+                              deck_id: selectedDeckId,
+                              asset_id: newFlashcard.asset_id ? parseInt(newFlashcard.asset_id) : undefined
+                            }
+                            await moderationApi.addFlashcard(payload)
                             setSuccess('Flashcard added!')
                             setNewFlashcard({ front: '', back: '', asset_id: '' })
                           } catch (err) { setError('Failed to add flashcard') }
