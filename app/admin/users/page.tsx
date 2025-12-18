@@ -46,8 +46,68 @@ export default function AdminUsersPage() {
   const [searchResults, setSearchResults] = useState<User[]>([])
   const [topUsers, setTopUsers] = useState<TopUser[]>([])
   const [loading, setLoading] = useState(false)
+  const [hasLoaded, setHasLoaded] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [showTopUsers, setShowTopUsers] = useState(false)
   const [actionLoading, setActionLoading] = useState<number | null>(null)
+
+  const loadInitialUsers = async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const response = await adminApi.getUsers(0, 50, selectedRole === 'all' ? undefined : selectedRole)
+      const data = Array.isArray(response.data) ? response.data : (response.data.users || [])
+      setSearchResults(data)
+      setShowTopUsers(false)
+      setHasLoaded(true)
+    } catch (err: any) {
+      console.error('Failed to load users:', err)
+      setError(err.response?.data?.detail || 'Failed to load users. Please check your permissions.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (searchQuery.length > 0 && searchQuery.length < 3) return
+
+    setLoading(true)
+    setError(null)
+    try {
+      const response = searchQuery.length === 0 
+        ? await adminApi.getUsers(0, 50, selectedRole === 'all' ? undefined : selectedRole)
+        : await adminApi.searchUsers(searchQuery)
+      
+      const data = Array.isArray(response.data) ? response.data : (response.data.users || [])
+      setSearchResults(data)
+      setShowTopUsers(false)
+      setHasLoaded(true)
+    } catch (err: any) {
+      console.error('Search failed:', err)
+      setError(err.response?.data?.detail || 'Search failed. Please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const loadTopUsers = async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const response = await adminApi.getTopUsers(20)
+      const data = Array.isArray(response.data) ? response.data : (response.data.users || [])
+      setTopUsers(data)
+      setShowTopUsers(true)
+      setSearchResults([])
+      setHasLoaded(true)
+    } catch (err: any) {
+      console.error('Failed to load top users:', err)
+      setError(err.response?.data?.detail || 'Failed to load top users.')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
     const adminEmails = ['cjalloh25@gmail.com', 'esjallow03@gmail.com', 'esjallow@gmail.com']
@@ -60,51 +120,6 @@ export default function AdminUsersPage() {
 
     loadInitialUsers()
   }, [user, router, selectedRole])
-
-  const loadInitialUsers = async () => {
-    setLoading(true)
-    try {
-      const response = await adminApi.getUsers(0, 50, selectedRole === 'all' ? undefined : selectedRole)
-      setSearchResults(response.data)
-      setShowTopUsers(false)
-    } catch (err) {
-      console.error('Failed to load users:', err)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (searchQuery.length > 0 && searchQuery.length < 3) return
-
-    setLoading(true)
-    try {
-      const response = searchQuery.length === 0 
-        ? await adminApi.getUsers(0, 50, selectedRole === 'all' ? undefined : selectedRole)
-        : await adminApi.searchUsers(searchQuery)
-      setSearchResults(response.data)
-      setShowTopUsers(false)
-    } catch (err) {
-      console.error('Search failed:', err)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const loadTopUsers = async () => {
-    setLoading(true)
-    try {
-      const response = await adminApi.getTopUsers(20)
-      setTopUsers(response.data)
-      setShowTopUsers(true)
-      setSearchResults([])
-    } catch (err) {
-      console.error('Failed to load top users:', err)
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const handleDeactivate = async (userId: number) => {
     if (!confirm('Are you sure you want to deactivate this user?')) return
@@ -344,6 +359,18 @@ export default function AdminUsersPage() {
           <div className="flex items-center justify-center py-12">
             <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
           </div>
+        ) : error ? (
+          <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-8 text-center">
+            <UserX className="w-12 h-12 text-red-500 mx-auto mb-4" />
+            <h3 className="text-lg font-bold text-red-700 dark:text-red-400 mb-2">Error Loading Users</h3>
+            <p className="text-red-600 dark:text-red-500 mb-6">{error}</p>
+            <button
+              onClick={loadInitialUsers}
+              className="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
+            >
+              Try Again
+            </button>
+          </div>
         ) : showTopUsers && topUsers.length > 0 ? (
           <div>
             <div className="flex items-center gap-3 mb-6">
@@ -378,9 +405,12 @@ export default function AdminUsersPage() {
               ))}
             </div>
           </div>
-        ) : searchQuery.length >= 3 && !loading ? (
+        ) : hasLoaded ? (
           <div className="text-center py-12">
-            <p className="text-slate-600 dark:text-slate-400">No users found matching "{searchQuery}"</p>
+            <UserX className="w-16 h-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
+            <p className="text-slate-600 dark:text-slate-400">
+              {searchQuery ? `No users found matching "${searchQuery}"` : "No users found in the system"}
+            </p>
           </div>
         ) : (
           <div className="text-center py-12">
